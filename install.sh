@@ -88,7 +88,7 @@ sudo mkdir -p /opt/myapp/
 
 # Baixar o ZIP do repositório ModulosPro diretamente no diretório /opt/myapp/
 print_centered "Baixando m-dulo-Go.zip..."
-sudo wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/blob/main/m-dulo-Go.zip &>/dev/null
+sudo wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/main/m-dulo-Go.zip &>/dev/null
 
 # Extrair o ZIP diretamente no diretório /opt/myapp/ e remover o arquivo ZIP após a extração
 print_centered "Extraindo arquivos..."
