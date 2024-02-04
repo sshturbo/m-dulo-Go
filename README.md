@@ -1,3 +1,4 @@
+Módulos Pró
 
 Modulos Pro é um conjunto de módulos desenvolvidos para o Painel Web Pro, facilitando a gestão e execução de diversas tarefas automatizadas.
 
@@ -13,11 +14,7 @@ O projeiro usa:
 
 ```
 Go
-```
-```
 dos2unix
-```
-```
 supervisor
 ```
 
@@ -39,6 +36,12 @@ Verificar se está instalado e executado com sucesso só executar o comando.
 
 ```bash
 sudo supervisorctl status m-dulo
+```
+
+Resposta esperando: 
+
+```
+m-dulo                           RUNNING   pid 26324, uptime 0:29:04
 ```
 
 Para poder tá parando os módulos e só executar o comando 
