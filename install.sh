@@ -30,13 +30,13 @@ progress_bar() {
 }
 
 # Verifica e instala dependências, incluindo o supervisor e o Go
-DEPENDENCIES=("dos2unix" "supervisor" "go")
+DEPENDENCIES=("dos2unix" "supervisord" "go")
 NEED_INSTALL=()
 for dep in "${DEPENDENCIES[@]}"; do
     if ! command -v $dep &>/dev/null; then
         NEED_INSTALL+=($dep)
     else
-        if [ $dep == "dos2unix" ] || [ $dep == "supervisor" ]; then
+        if [ $dep == "dos2unix" ] || [ $dep == "supervisord" ]; then
             # Para programas sem verificação de versão específica
             print_centered "$dep já está instalado."
         elif [ $dep == "go" ]; then
