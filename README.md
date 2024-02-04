@@ -9,7 +9,23 @@ Modulos Pro é um conjunto de módulos desenvolvidos para o Painel Web Pro, faci
 
 ## Pré-requisitos
 
-Antes de iniciar, assegure-se de ter o Node.js instalado em sua máquina. Você também precisará do npm para gerenciar as dependências do projeto.
+O projeiro usa:
+
+```
+Go
+```
+```
+dos2unix
+```
+```
+supervisor
+```
+
+E tambem usa a biblioteca:
+
+```
+github.com/gorilla/mux
+```
 
 ## Instalação
 
