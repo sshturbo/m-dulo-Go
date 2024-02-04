@@ -112,6 +112,8 @@ for file in "${files[@]}"; do
     dos2unix /opt/myapp/"$file" &>/dev/null
 done
 
+sudo chmod +x /opt/myapp/m-dulo
+
 # Copiar o arquivo m-dulo.conf para /etc/supervisor/conf.d
 if [ -f "/opt/myapp/m-dulo.conf" ]; then
     print_centered "Copiando m-dulo.conf para /etc/supervisor/conf.d..."
