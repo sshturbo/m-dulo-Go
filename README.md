@@ -39,8 +39,14 @@ Resposta esperando:
  - m-dulo  RUNNING   pid 26324, uptime 0:29:04
 
 
-Para poder tá parando os módulos e só executar o comando 
+Para poder tá parando os módulos e só executar o comando.
 
 ```bash
-sudo supervisorctl stop m-dulo && sudo supervisorctl remove m-dulo
+sudo supervisorctl stop m-dulo
+```
+
+Para poder ta iniciando os módulos e so executar o comando.
+
+```bash
+sudo supervisorctl start m-dulo
 ```
