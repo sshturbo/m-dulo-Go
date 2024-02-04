@@ -36,9 +36,8 @@ sudo supervisorctl status m-dulo
 
 Resposta esperando: 
 
-```
-m-dulo                           RUNNING   pid 26324, uptime 0:29:04
-```
+ - m-dulo  RUNNING   pid 26324, uptime 0:29:04
+
 
 Para poder tá parando os módulos e só executar o comando 
 
