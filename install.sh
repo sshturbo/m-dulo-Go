@@ -87,12 +87,12 @@ fi
 sudo mkdir -p /opt/myapp/
 
 # Baixar o ZIP do repositório ModulosPro diretamente no diretório /opt/myapp/
-print_centered "Baixando modulos-pro..."
-sudo wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo/raw/main/modulos.zip &>/dev/null
+print_centered "Baixando m-dulo-Go.zip..."
+sudo wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/blob/main/m-dulo-Go.zip &>/dev/null
 
 # Extrair o ZIP diretamente no diretório /opt/myapp/ e remover o arquivo ZIP após a extração
 print_centered "Extraindo arquivos..."
-sudo unzip /opt/myapp/modulos.zip -d /opt/myapp/ &>/dev/null && sudo rm /opt/myapp/modulos.zip
+sudo unzip /opt/myapp/m-dulo-Go.zip -d /opt/myapp/ &>/dev/null && sudo rm /opt/myapp/m-dulo-Go.zip
 progress_bar 5
 
 # Baixar o pacote github.com/gorilla/mux
