@@ -30,7 +30,7 @@ progress_bar() {
 }
 
 # Verifica e instala dependências, incluindo o supervisor e o Go
-DEPENDENCIES=("dos2unix" "supervisord" "go")
+DEPENDENCIES=("dos2unix" "supervisor" "go")
 NEED_INSTALL=()
 for dep in "${DEPENDENCIES[@]}"; do
     if ! command -v $dep &>/dev/null; then
@@ -55,10 +55,10 @@ for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
     case $dep in
         dos2unix)
-            sudo apt install dos2unix -y &>/dev/null
+            sudo apt install dos2unix -y
             ;;
         supervisor)
-            sudo apt install supervisor -y &>/dev/null
+            sudo apt install supervisor -y
             supervisor_version=$(supervisord --version | awk 'NR==1{print $NF}')
             print_centered "$dep instalado com sucesso. Versão: $supervisor_version."
             ;;
