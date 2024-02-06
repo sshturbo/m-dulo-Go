@@ -57,7 +57,7 @@ for dep in "${NEED_INSTALL[@]}"; do
         dos2unix)
             apt install dos2unix -y
             ;;
-        supervisor)
+        supervisord)
             apt install supervisor -y
             supervisor_version=$(supervisord --version | awk 'NR==1{print $NF}')
             print_centered "$dep instalado com sucesso. Versão: $supervisor_version."
