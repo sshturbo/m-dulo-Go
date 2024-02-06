@@ -55,10 +55,10 @@ for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
     case $dep in
         dos2unix)
-            sudo apt install dos2unix -y
+            apt install dos2unix -y
             ;;
         supervisor)
-            sudo apt install supervisor -y
+            apt install supervisor -y
             supervisor_version=$(supervisord --version | awk 'NR==1{print $NF}')
             print_centered "$dep instalado com sucesso. Versão: $supervisor_version."
             ;;
