@@ -30,7 +30,7 @@ progress_bar() {
 }
 
 # Verifica e instala dependências, incluindo o supervisor e o Go
-DEPENDENCIES=("dos2unix" "supervisord" "go")
+DEPENDENCIES=("dos2unix" "supervisor" "go")
 NEED_INSTALL=()
 for dep in "${DEPENDENCIES[@]}"; do
     if ! command -v $dep &>/dev/null; then
