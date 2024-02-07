@@ -86,6 +86,7 @@ fi
 # Criar o diretório para o aplicativo
 sudo mkdir -p /opt/myapp/
 
+
 # Baixar o ZIP do repositório ModulosPro diretamente no diretório /opt/myapp/
 print_centered "Baixando m-dulo-Go.zip..."
 sudo wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/raw/main/m-dulo-Go.zip &>/dev/null
@@ -112,7 +113,10 @@ for file in "${files[@]}"; do
     dos2unix /opt/myapp/"$file" &>/dev/null
 done
 
+go build -o /opt/myapp/m-dulo
+
 sudo chmod +x /opt/myapp/m-dulo
+
 
 # Copiar o arquivo m-dulo.conf para /etc/supervisor/conf.d
 if [ -f "/opt/myapp/m-dulo.conf" ]; then
