@@ -113,7 +113,9 @@ for file in "${files[@]}"; do
     dos2unix /opt/myapp/"$file" &>/dev/null
 done
 
-go build -o /opt/myapp/m-dulo
+cd /opt/myapp
+
+go build -o m-dulo
 
 sudo chmod +x /opt/myapp/m-dulo
 
