@@ -71,6 +71,14 @@ for dep in "${NEED_INSTALL[@]}"; do
     progress_bar 10
 done
 
+# Verificar e instalar unzip, se necessário
+if ! command -v unzip &>/dev/null; then
+    print_centered "Instalando unzip..."
+    sudo apt install unzip -y
+    print_centered "unzip instalado com sucesso."
+fi
+
+
 
 # Verifica se o diretório /opt/myapp/ existe
 if [ -d "/opt/myapp/" ]; then
