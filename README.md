@@ -14,7 +14,6 @@ O projeiro usa:
 
  - Go
  - dos2unix
- - supervisor
 
 E tambem usa a biblioteca:
 
@@ -31,22 +30,30 @@ sudo wget --quiet -O install.sh https://raw.githubusercontent.com/sshturbo/m-dul
 Verificar se está instalado e executado com sucesso só executar o comando.
 
 ```bash
-sudo supervisorctl status m-dulo
+sudo systemctl status m-dulo.service
 ```
-
-Resposta esperando: 
-
- - m-dulo  RUNNING   pid 26324, uptime 0:29:04
 
 
 Para poder tá parando os módulos e só executar o comando.
 
 ```bash
-sudo supervisorctl stop m-dulo
+sudo systemctl stop m-dulo.service
 ```
+
+```bash
+sudo systemctl disable m-dulo.service
+```
+
+```bash
+sudo systemctl daemon-reload
+```
+ 
 
 Para poder ta iniciando os módulos e so executar o comando.
 
 ```bash
-sudo supervisorctl start m-dulo
+sudo systemctl enable m-dulo.service
+```
+```bash
+sudo systemctl start m-dulo.service
 ```
