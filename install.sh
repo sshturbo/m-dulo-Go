@@ -124,7 +124,7 @@ sudo chmod +x /opt/myapp/m-dulo
 
 
 if [ -f "/opt/myapp/m-dulo.service" ]; then
-    print_centered "Copiando m-dulo.conf para /etc/systemd/system/"
+    print_centered "Copiando m-dulo.service para /etc/systemd/system/"
     sudo cp /opt/myapp/m-dulo.service /etc/systemd/system/
     sudo chown root:root /etc/systemd/system/m-dulo.service
     sudo chmod 644 /etc/systemd/system/m-dulo.service
