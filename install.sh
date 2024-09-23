@@ -29,14 +29,15 @@ progress_bar() {
     echo "] Completo!"
 }
 
-# Verifica e instala dependências, incluindo o supervisor e o Go
-DEPENDENCIES=("dos2unix" "supervisord" "go")
+# Verifica e instala dependências, excluindo o supervisor
+DEPENDENCIES=("dos2unix" "go")
 NEED_INSTALL=()
+
 for dep in "${DEPENDENCIES[@]}"; do
     if ! command -v $dep &>/dev/null; then
         NEED_INSTALL+=($dep)
     else
-        if [ $dep == "dos2unix" ] || [ $dep == "supervisord" ]; then
+        if [ $dep == "dos2unix" ]; then
             # Para programas sem verificação de versão específica
             print_centered "$dep já está instalado."
         elif [ $dep == "go" ]; then
@@ -57,11 +58,6 @@ for dep in "${NEED_INSTALL[@]}"; do
         dos2unix)
             apt install dos2unix -y
             ;;
-        supervisord)
-            apt install supervisor -y
-            supervisor_version=$(supervisord --version | awk 'NR==1{print $NF}')
-            print_centered "$dep instalado com sucesso. Versão: $supervisor_version."
-            ;;
         go)
             sudo apt install golang-go -y &>/dev/null
             go_version=$(go version | awk '{print $3}')
@@ -71,20 +67,20 @@ for dep in "${NEED_INSTALL[@]}"; do
     progress_bar 10
 done
 
-# Verificar e instalar unzip, se necessário
-if ! command -v unzip &>/dev/null; then
-    print_centered "Instalando unzip..."
-    sudo apt install unzip -y
-    print_centered "unzip instalado com sucesso."
-fi
-
-
 
 # Verifica se o diretório /opt/myapp/ existe
 if [ -d "/opt/myapp/" ]; then
-    print_centered "Diretório /opt/myapp/ já existe. Parando e excluindo processo se existir..."
-    sudo supervisorctl stop m-dulo &>/dev/null
-    sudo supervisorctl remove m-dulo &>/dev/null
+    print_centered "Diretório /opt/myapp/ já existe. Parando e desabilitando o serviço se existir..."
+    sudo systemctl stop m-dulo.service &>/dev/null
+    sudo systemctl disable m-dulo.service &>/dev/null
+    sudo systemctl daemon-reload &>/dev/null
+    
+    print_centered "Excluindo arquivo de configuração do serviço..."
+    sudo rm -f /etc/systemd/system/m-dulo.service
+    
+    print_centered "Recarregando daemon do systemd..."
+    sudo systemctl daemon-reload &>/dev/null
+    
     print_centered "Excluindo arquivos e pastas antigos..."
     sudo rm -rf /opt/myapp/
 else
@@ -127,23 +123,23 @@ go build -o /opt/myapp/m-dulo /opt/myapp/m-dulo.go
 sudo chmod +x /opt/myapp/m-dulo
 
 
-# Copiar o arquivo m-dulo.conf para /etc/supervisor/conf.d
 if [ -f "/opt/myapp/m-dulo.conf" ]; then
-    print_centered "Copiando m-dulo.conf para /etc/supervisor/conf.d..."
-    sudo cp /opt/myapp/m-dulo.conf /etc/supervisor/conf.d/
-    sudo chown root:root /etc/supervisor/conf.d/m-dulo.conf
-    sudo chmod 644 /etc/supervisor/conf.d/m-dulo.conf
+    print_centered "Copiando m-dulo.conf para /etc/systemd/system/"
+    sudo cp /opt/myapp/m-dulo.service /etc/systemd/system/
+    sudo chown root:root /etc/systemd/system/m-dulo.service
+    sudo chmod 644 /etc/systemd/system/m-dulo.service
     print_centered "Arquivo copiado com sucesso."
 else
-    print_centered "Arquivo m-dulo.conf não encontrado. Verifique se o arquivo existe no repositório."
+    print_centered "Arquivo m-dulo.service não encontrado. Verifique se o arquivo existe no repositório."
 fi
 
-# Atualizar a configuração do Supervisor
-sudo supervisorctl update &>/dev/null
+# Atualizar a configuração do systemctl
+sudo systemctl daemon-reload &>/dev/null
 
 # Iniciar o serviço
 print_centered "Iniciando o modulos do painel..."
-sudo supervisorctl start m-dulo &>/dev/null
+sudo systemctl start m-dulo.service &>/dev/null
+sudo systemctl enable m-dulo.service &>/dev/null
 
 progress_bar 10
 
