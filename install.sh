@@ -123,7 +123,7 @@ go build -o /opt/myapp/m-dulo /opt/myapp/m-dulo.go
 sudo chmod +x /opt/myapp/m-dulo
 
 
-if [ -f "/opt/myapp/m-dulo.conf" ]; then
+if [ -f "/opt/myapp/m-dulo.service" ]; then
     print_centered "Copiando m-dulo.conf para /etc/systemd/system/"
     sudo cp /opt/myapp/m-dulo.service /etc/systemd/system/
     sudo chown root:root /etc/systemd/system/m-dulo.service
