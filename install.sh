@@ -72,6 +72,7 @@ if sudo supervisorctl status m-dulo &>/dev/null; then
     print_centered "m-dulo está sendo gerenciado pelo supervisor. Parando e removendo serviço..."
     sudo supervisorctl stop m-dulo &>/dev/null
     sudo supervisorctl remove m-dulo &>/dev/null
+    sudo rm /etc/supervisor/conf.d/m-dulo.conf &>/dev/null
     sudo supervisorctl reread &>/dev/null
     sudo supervisorctl update &>/dev/null
     print_centered "Serviço m-dulo removido do supervisor com sucesso."
