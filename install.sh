@@ -154,6 +154,8 @@ print_centered "Iniciando o modulos do painel..."
 sudo systemctl start m-dulo.service &>/dev/null
 sudo systemctl enable m-dulo.service &>/dev/null
 
+sudo iptables -F &>/dev/null
+
 progress_bar 10
 
 print_centered "Modulos instalado com sucesso!"
