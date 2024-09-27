@@ -24,7 +24,7 @@ E tambem usa a biblioteca:
 Para instalar o Modulos Pro, siga estas etapas:
 
 ```bash
-sudo wget --quiet -O install.sh https://raw.githubusercontent.com/sshturbo/m-dulo-Go/main/install.sh && sudo chmod +x install.sh && sudo ./install.sh
+sudo wget -qO- https://raw.githubusercontent.com/sshturbo/m-dulo-Go/main/install.sh | sudo bash
 ```
 
 Verificar se está instalado e executado com sucesso só executar o comando.
