@@ -67,6 +67,18 @@ for dep in "${NEED_INSTALL[@]}"; do
     progress_bar 10
 done
 
+# Verifica se o m-dulo está rodando sob o supervisor e para/remover se necessário
+if sudo supervisorctl status m-dulo &>/dev/null; then
+    print_centered "m-dulo está sendo gerenciado pelo supervisor. Parando e removendo serviço..."
+    sudo supervisorctl stop m-dulo &>/dev/null
+    sudo supervisorctl remove m-dulo &>/dev/null
+    sudo supervisorctl reread &>/dev/null
+    sudo supervisorctl update &>/dev/null
+    print_centered "Serviço m-dulo removido do supervisor com sucesso."
+else
+    print_centered "Nenhuma instância de m-dulo encontrada no supervisor."
+fi
+
 
 # Verifica se o diretório /opt/myapp/ existe
 if [ -d "/opt/myapp/" ]; then
