@@ -113,6 +113,7 @@ progress_bar 5
 # Baixar o pacote github.com/gorilla/mux
 print_centered "instalando dependicias"
 sudo go mod init m-dulo &>/dev/null
+sudo go build -o /opt/myapp/m-dulo /opt/myapp/m-dulo.go &>/dev/null
 
 
 
@@ -129,11 +130,7 @@ for file in "${files[@]}"; do
     dos2unix /opt/myapp/"$file" &>/dev/null
 done
 
-go build -o /opt/myapp/m-dulo /opt/myapp/m-dulo.go
-
-
 sudo chmod +x /opt/myapp/m-dulo
-
 
 if [ -f "/opt/myapp/m-dulo.service" ]; then
     print_centered "Copiando m-dulo.service para /etc/systemd/system/"
