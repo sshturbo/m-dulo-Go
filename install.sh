@@ -130,7 +130,7 @@ for file in "${files[@]}"; do
     dos2unix /opt/myapp/"$file" &>/dev/null
 done
 
-sudo chmod +x /opt/myapp/m-dulo
+sudo chmod +x /opt/myapp/
 
 if [ -f "/opt/myapp/m-dulo.service" ]; then
     print_centered "Copiando m-dulo.service para /etc/systemd/system/"
