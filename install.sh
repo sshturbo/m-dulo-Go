@@ -29,7 +29,6 @@ progress_bar() {
     echo "] Completo!"
 }
 
-# Verifica e instala dependências, excluindo o supervisor
 DEPENDENCIES=("dos2unix" "go")
 NEED_INSTALL=()
 
@@ -38,47 +37,45 @@ for dep in "${DEPENDENCIES[@]}"; do
         NEED_INSTALL+=($dep)
     else
         if [ $dep == "dos2unix" ]; then
-            # Para programas sem verificação de versão específica
+            # Verificação para o "dos2unix", sem versão específica
             print_centered "$dep já está instalado."
         elif [ $dep == "go" ]; then
-            go_version=$(go version | awk '{print $3}')
-            print_centered "$dep já está instalado. Versão atual: $go_version."
+            # Mostra a saída completa do comando go version
+            go_version=$(go version)
+            print_centered "$dep já está instalado. $go_version"
         else
-            # Para programas com verificação de versão
-            current_version=$($dep -v | cut -d 'v' -f 2 | cut -d '.' -f 1)
+            # Para outros programas, caso haja versão
+            current_version=$($dep -v | cut -d ' ' -f 2 | cut -d '.' -f 1)
             print_centered "$dep já está instalado. Versão atual: $current_version."
         fi
     fi
 done
 
+# Dependências a serem instaladas
+NEED_INSTALL=("dos2unix" "go")
+
 # Instala dependências necessárias
 for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
+    
     case $dep in
         dos2unix)
-            apt install dos2unix -y
+            sudo apt install dos2unix -y
             ;;
         go)
             sudo apt install golang-go -y &>/dev/null
-            go_version=$(go version | awk '{print $3}')
-            print_centered "$dep instalado com sucesso. Versão: $go_version."
+            
+            # Verificando a versão do Go
+            go_version=$(go version 2>/dev/null)
+            if [ $? -ne 0 ]; then
+                print_centered "Erro ao verificar a versão do Go. O Go pode não estar instalado corretamente."
+            else
+                print_centered "$dep instalado com sucesso. Versão: $go_version."
+            fi
             ;;
     esac
     progress_bar 10
 done
-
-# Verifica se o m-dulo está rodando sob o supervisor e para/remover se necessário
-if sudo supervisorctl status m-dulo &>/dev/null; then
-    print_centered "m-dulo está sendo gerenciado pelo supervisor. Parando e removendo serviço..."
-    sudo supervisorctl stop m-dulo &>/dev/null
-    sudo supervisorctl remove m-dulo &>/dev/null
-    sudo rm /etc/supervisor/conf.d/m-dulo.conf &>/dev/null
-    sudo supervisorctl reread &>/dev/null
-    sudo supervisorctl update &>/dev/null
-    print_centered "Serviço m-dulo removido do supervisor com sucesso."
-else
-    print_centered "Nenhuma instância de m-dulo encontrada no supervisor."
-fi
 
 
 # Verifica se o diretório /opt/myapp/ existe
@@ -114,8 +111,10 @@ sudo unzip /opt/myapp/m-dulo-Go.zip -d /opt/myapp/ &>/dev/null && sudo rm /opt/m
 progress_bar 5
 
 # Baixar o pacote github.com/gorilla/mux
-print_centered "Baixando github.com/gorilla/mux..."
-sudo go get github.com/gorilla/mux &>/dev/null
+print_centered "instalando dependicias"
+sudo go run m-dulo.go &>/dev/null
+
+
 
 # Dar permissão de execução para scripts .sh e converter para o formato Unix
 print_centered "Atualizando permissões..."
@@ -136,8 +135,8 @@ go build -o /opt/myapp/m-dulo /opt/myapp/m-dulo.go
 sudo chmod +x /opt/myapp/m-dulo
 
 
-if [ -f "/opt/myapp/m-dulo.service" ]; then
-    print_centered "Copiando m-dulo.service para /etc/systemd/system/"
+if [ -f "/opt/myapp/m-dulo.conf" ]; then
+    print_centered "Copiando m-dulo.conf para /etc/systemd/system/"
     sudo cp /opt/myapp/m-dulo.service /etc/systemd/system/
     sudo chown root:root /etc/systemd/system/m-dulo.service
     sudo chmod 644 /etc/systemd/system/m-dulo.service
@@ -153,8 +152,6 @@ sudo systemctl daemon-reload &>/dev/null
 print_centered "Iniciando o modulos do painel..."
 sudo systemctl start m-dulo.service &>/dev/null
 sudo systemctl enable m-dulo.service &>/dev/null
-
-sudo iptables -F &>/dev/null
 
 progress_bar 10
 
