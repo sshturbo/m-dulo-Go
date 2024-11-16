@@ -29,7 +29,7 @@ progress_bar() {
     echo "] Completo!"
 }
 
-DEPENDENCIES=("dos2unix" "go")
+DEPENDENCIES=("dos2unix" "go" "unzip" "wget")
 NEED_INSTALL=()
 
 for dep in "${DEPENDENCIES[@]}"; do
@@ -37,35 +37,29 @@ for dep in "${DEPENDENCIES[@]}"; do
         NEED_INSTALL+=($dep)
     else
         if [ $dep == "dos2unix" ]; then
-            # Verificação para o "dos2unix", sem versão específica
             print_centered "$dep já está instalado."
         elif [ $dep == "go" ]; then
-            # Mostra a saída completa do comando go version
             go_version=$(go version)
             print_centered "$dep já está instalado. $go_version"
+        elif [ $dep == "unzip" ] || [ $dep == "wget" ]; then
+            print_centered "$dep já está instalado."
         else
-            # Para outros programas, caso haja versão
             current_version=$($dep -v | cut -d ' ' -f 2 | cut -d '.' -f 1)
             print_centered "$dep já está instalado. Versão atual: $current_version."
         fi
     fi
 done
 
-# Dependências a serem instaladas
-NEED_INSTALL=("dos2unix" "go")
-
 # Instala dependências necessárias
 for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
-    
+
     case $dep in
         dos2unix)
             sudo apt install dos2unix -y
             ;;
         go)
             sudo apt install golang-go -y &>/dev/null
-            
-            # Verificando a versão do Go
             go_version=$(go version 2>/dev/null)
             if [ $? -ne 0 ]; then
                 print_centered "Erro ao verificar a versão do Go. O Go pode não estar instalado corretamente."
@@ -73,9 +67,18 @@ for dep in "${NEED_INSTALL[@]}"; do
                 print_centered "$dep instalado com sucesso. Versão: $go_version."
             fi
             ;;
+        unzip)
+            sudo apt install unzip -y
+            print_centered "$dep instalado com sucesso."
+            ;;
+        wget)
+            sudo apt install wget -y
+            print_centered "$dep instalado com sucesso."
+            ;;
     esac
     progress_bar 10
 done
+
 
 
 # Verifica se o diretório /opt/myapp/ existe
