@@ -112,9 +112,9 @@ progress_bar 5
 
 # Baixar o pacote github.com/gorilla/mux
 print_centered "instalando dependicias"
-sudo go mod init m-dulo
+cd /opt/myapp 
 
-cd /opt/myapp
+sudo go mod init m-dulo
 
 sudo go build -o m-dulo m-dulo.go
 
