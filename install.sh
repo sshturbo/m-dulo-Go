@@ -8,11 +8,7 @@ fi
 
 # Função para centralizar texto
 print_centered() {
-    term_width=$(tput cols)
-    text="$1"
-    padding=$(( (term_width - ${#text}) / 2 ))
-    printf "%${padding}s" '' # Adiciona espaços antes do texto
-    echo "$text"
+    printf "%*s\n" $(((${#1} + $(tput cols)) / 2)) "$1"
 }
 
 # Função para simular uma barra de progresso
@@ -32,15 +28,10 @@ progress_bar() {
 DEPENDENCIES=("dos2unix" "unzip" "wget")
 NEED_INSTALL=()
 
-GO_URL="https://go.dev/dl/go1.21.1.linux-arm64.tar.gz"
+GO_URL="https://go.dev/dl/go1.23.3.linux-amd64.tar.gz"
 GO_INSTALL_DIR="/usr/local"
 GO_BINARY="/usr/local/go/bin/go"
-GO_VERSION_EXPECTED="go1.21.1"
-
-# Função para imprimir centralizado (se necessário)
-print_centered() {
-    printf "%*s\n" $(((${#1} + $(tput cols)) / 2)) "$1"
-}
+GO_VERSION_EXPECTED="go1.23.3"
 
 # Verificar dependências
 for dep in "${DEPENDENCIES[@]}"; do
@@ -70,26 +61,26 @@ for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
     case $dep in
         dos2unix)
-            sudo apt install dos2unix -y
+            apt install dos2unix -y
             ;;
         unzip)
-            sudo apt install unzip -y
+            apt install unzip -y
             ;;
         wget)
-            sudo apt install wget -y
+            apt install wget -y
             ;;
         go)
             # Baixar e instalar o Go manualmente
             wget -q "$GO_URL" -O /tmp/go.tar.gz
-            sudo tar -C "$GO_INSTALL_DIR" -xzf /tmp/go.tar.gz
+            tar -C "$GO_INSTALL_DIR" -xzf /tmp/go.tar.gz
             rm /tmp/go.tar.gz
-            
+
             # Adicionar Go ao PATH no .profile e carregar imediatamente
             if ! grep -q "/usr/local/go/bin" ~/.profile; then
                 echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
                 export PATH=$PATH:/usr/local/go/bin
             fi
-            
+
             # Confirmar a instalação
             if command -v go &>/dev/null; then
                 go_version=$(go version | awk '{print $3}')
@@ -105,81 +96,53 @@ for dep in "${NEED_INSTALL[@]}"; do
     esac
 done
 
-
-# Verifica se o diretório /opt/myapp/ existe
+# Configuração do diretório /opt/myapp/
 if [ -d "/opt/myapp/" ]; then
-    print_centered "Diretório /opt/myapp/ já existe. Parando e desabilitando o serviço se existir..."
-    sudo systemctl stop m-dulo.service &>/dev/null
-    sudo systemctl disable m-dulo.service &>/dev/null
-    sudo systemctl daemon-reload &>/dev/null
-    
-    print_centered "Excluindo arquivo de configuração do serviço..."
-    sudo rm -f /etc/systemd/system/m-dulo.service
-    
-    print_centered "Recarregando daemon do systemd..."
-    sudo systemctl daemon-reload &>/dev/null
-    
-    print_centered "Excluindo arquivos e pastas antigos..."
-    sudo rm -rf /opt/myapp/
-else
-    print_centered "Diretório /opt/myapp/ não existe. Criando..."
+    print_centered "Diretório /opt/myapp/ já existe. Excluindo antigo..."
+    systemctl stop m-dulo.service &>/dev/null
+    systemctl disable m-dulo.service &>/dev/null
+    systemctl daemon-reload &>/dev/null
+    rm -rf /opt/myapp/
 fi
 
-# Criar o diretório para o aplicativo
-sudo mkdir -p /opt/myapp/
+mkdir -p /opt/myapp/
 
-
-# Baixar o ZIP do repositório ModulosPro diretamente no diretório /opt/myapp/
+# Baixar e configurar o repositório
 print_centered "Baixando m-dulo-Go.zip..."
-sudo wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/raw/main/m-dulo-Go.zip &>/dev/null
+wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/raw/main/m-dulo-Go.zip &>/dev/null
 
-# Extrair o ZIP diretamente no diretório /opt/myapp/ e remover o arquivo ZIP após a extração
 print_centered "Extraindo arquivos..."
-sudo unzip /opt/myapp/m-dulo-Go.zip -d /opt/myapp/ &>/dev/null && sudo rm /opt/myapp/m-dulo-Go.zip
+unzip /opt/myapp/m-dulo-Go.zip -d /opt/myapp/ &>/dev/null && rm /opt/myapp/m-dulo-Go.zip
 progress_bar 5
 
-# Baixar o pacote github.com/gorilla/mux
-print_centered "instalando dependicias"
+# Configurar e compilar o projeto Go
+print_centered "Instalando dependências do projeto..."
 cd /opt/myapp 
+/usr/local/go/bin/go mod init m-dulo &>/dev/null
+/usr/local/go/bin/go build -o m-dulo m-dulo.go
 
-sudo /usr/local/go/bin/go mod init m-dulo
+chmod +x m-dulo
 
-sudo /usr/local/go/bin/go build -o m-dulo m-dulo.go
-
-sudo chmod +x m-dulo
-
-# Dar permissão de execução para scripts .sh e converter para o formato Unix
+# Atualizar permissões de scripts auxiliares
 print_centered "Atualizando permissões..."
-files=(
-    "SshturboMakeAccount.sh"
-    "ExcluirExpiradoApi.sh"
-    "killuser.sh"
-)
-
-for file in "${files[@]}"; do
-    sudo chmod +x /opt/myapp/"$file"
+for file in "SshturboMakeAccount.sh" "ExcluirExpiradoApi.sh" "killuser.sh"; do
+    chmod +x /opt/myapp/"$file"
     dos2unix /opt/myapp/"$file" &>/dev/null
 done
 
-
+# Configurar serviço systemd
 if [ -f "/opt/myapp/m-dulo.service" ]; then
-    print_centered "Copiando m-dulo.service para /etc/systemd/system/"
-    sudo cp /opt/myapp/m-dulo.service /etc/systemd/system/
-    sudo chown root:root /etc/systemd/system/m-dulo.service
-    sudo chmod 644 /etc/systemd/system/m-dulo.service
-    print_centered "Arquivo copiado com sucesso."
+    print_centered "Configurando serviço systemd..."
+    cp /opt/myapp/m-dulo.service /etc/systemd/system/
+    chown root:root /etc/systemd/system/m-dulo.service
+    chmod 644 /etc/systemd/system/m-dulo.service
+    systemctl daemon-reload
+    systemctl enable m-dulo.service
+    systemctl start m-dulo.service
 else
-    print_centered "Arquivo m-dulo.service não encontrado. Verifique se o arquivo existe no repositório."
+    print_centered "Erro: Arquivo m-dulo.service não encontrado."
+    exit 1
 fi
 
-# Atualizar a configuração do systemctl
-sudo systemctl daemon-reload &>/dev/null
-
-# Iniciar o serviço
-print_centered "Iniciando o modulos do painel..."
-sudo systemctl start m-dulo.service &>/dev/null
-sudo systemctl enable m-dulo.service &>/dev/null
-
 progress_bar 10
-
-print_centered "Modulos instalado com sucesso!"
+print_centered "Modulos instalado e configurado com sucesso!"
