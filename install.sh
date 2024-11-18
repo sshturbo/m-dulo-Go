@@ -29,8 +29,12 @@ progress_bar() {
     echo "] Completo!"
 }
 
-DEPENDENCIES=("dos2unix" "go" "unzip" "wget")
+DEPENDENCIES=("dos2unix" "unzip" "wget")
 NEED_INSTALL=()
+
+GO_URL="https://go.dev/dl/go1.21.1.linux-arm64.tar.gz"
+GO_INSTALL_DIR="/usr/local"
+GO_BINARY="/usr/local/go/bin/go"
 
 for dep in "${DEPENDENCIES[@]}"; do
     if ! command -v $dep &>/dev/null; then
@@ -38,46 +42,62 @@ for dep in "${DEPENDENCIES[@]}"; do
     else
         if [ $dep == "dos2unix" ]; then
             print_centered "$dep já está instalado."
-        elif [ $dep == "go" ]; then
-            go_version=$(go version)
-            print_centered "$dep já está instalado. $go_version"
         elif [ $dep == "unzip" ] || [ $dep == "wget" ]; then
             print_centered "$dep já está instalado."
-        else
-            current_version=$($dep -v | cut -d ' ' -f 2 | cut -d '.' -f 1)
-            print_centered "$dep já está instalado. Versão atual: $current_version."
         fi
     fi
 done
 
+# Verificar se o Go está instalado e na versão correta
+if command -v go &>/dev/null; then
+    current_go_version=$(go version | awk '{print $3}')
+    if [ "$current_go_version" != "go1.21.1" ]; then
+        print_centered "Atualizando Go para a versão 1.21.1..."
+        NEED_INSTALL+=("go")
+    else
+        print_centered "Go já está instalado na versão correta: $current_go_version."
+    fi
+else
+    print_centered "Go não está instalado."
+    NEED_INSTALL+=("go")
+fi
+
 # Instala dependências necessárias
 for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
-
     case $dep in
         dos2unix)
             sudo apt install dos2unix -y
             ;;
-        go)
-            sudo apt install golang-go -y &>/dev/null
-            go_version=$(go version 2>/dev/null)
-            if [ $? -ne 0 ]; then
-                print_centered "Erro ao verificar a versão do Go. O Go pode não estar instalado corretamente."
-            else
-                print_centered "$dep instalado com sucesso. Versão: $go_version."
-            fi
-            ;;
         unzip)
             sudo apt install unzip -y
-            print_centered "$dep instalado com sucesso."
             ;;
         wget)
             sudo apt install wget -y
-            print_centered "$dep instalado com sucesso."
+            ;;
+        go)
+            # Baixar e instalar o Go manualmente
+            wget -q "$GO_URL" -O /tmp/go.tar.gz
+            sudo tar -C "$GO_INSTALL_DIR" -xzf /tmp/go.tar.gz
+            rm /tmp/go.tar.gz
+            
+            # Adicionar Go ao PATH
+            if ! grep -q "/usr/local/go/bin" <<<"$PATH"; then
+                echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
+                source ~/.profile
+            fi
+            
+            if [ -f "$GO_BINARY" ]; then
+                go_version=$("$GO_BINARY" version 2>/dev/null)
+                print_centered "Go instalado com sucesso. Versão: $go_version."
+            else
+                print_centered "Erro ao instalar o Go."
+            fi
             ;;
     esac
     progress_bar 10
 done
+
 
 
 
