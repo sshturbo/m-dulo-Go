@@ -142,9 +142,9 @@ progress_bar 5
 print_centered "instalando dependicias"
 cd /opt/myapp 
 
-sudo go mod init m-dulo
+sudo /usr/local/go/bin/go mod init m-dulo
 
-sudo go build -o m-dulo m-dulo.go
+sudo /usr/local/go/bin/go build -o m-dulo m-dulo.go
 
 sudo chmod +x m-dulo
 
