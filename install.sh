@@ -43,8 +43,8 @@ for dep in "${DEPENDENCIES[@]}"; do
 done
 
 # Verificar se o Go está instalado e na versão correta
-if command -v go &>/dev/null; then
-    current_go_version=$(go version | awk '{print $3}')
+if [ -x "$GO_BINARY" ]; then
+    current_go_version=$("$GO_BINARY" version | awk '{print $3}')
     if [ "$current_go_version" != "$GO_VERSION_EXPECTED" ]; then
         print_centered "Atualizando Go para a versão $GO_VERSION_EXPECTED..."
         NEED_INSTALL+=("go")
@@ -52,7 +52,7 @@ if command -v go &>/dev/null; then
         print_centered "Go já está instalado na versão correta: $current_go_version."
     fi
 else
-    print_centered "Go não está instalado."
+    print_centered "Go não está instalado ou o binário não foi encontrado em $GO_BINARY."
     NEED_INSTALL+=("go")
 fi
 
@@ -61,13 +61,13 @@ for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
     case $dep in
         dos2unix)
-            apt install dos2unix -y
+            apt install -y dos2unix
             ;;
         unzip)
-            apt install unzip -y
+            apt install -y unzip
             ;;
         wget)
-            apt install wget -y
+            apt install -y wget
             ;;
         go)
             # Baixar e instalar o Go manualmente
@@ -75,15 +75,15 @@ for dep in "${NEED_INSTALL[@]}"; do
             tar -C "$GO_INSTALL_DIR" -xzf /tmp/go.tar.gz
             rm /tmp/go.tar.gz
 
-            # Adicionar Go ao PATH no .profile e carregar imediatamente
+            # Adicionar Go ao PATH
             if ! grep -q "/usr/local/go/bin" ~/.profile; then
                 echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
-                export PATH=$PATH:/usr/local/go/bin
             fi
+            export PATH=$PATH:/usr/local/go/bin
 
             # Confirmar a instalação
-            if command -v go &>/dev/null; then
-                go_version=$(go version | awk '{print $3}')
+            if [ -x "$GO_BINARY" ]; then
+                go_version=$("$GO_BINARY" version | awk '{print $3}')
                 if [ "$go_version" == "$GO_VERSION_EXPECTED" ]; then
                     print_centered "Go instalado com sucesso. Versão: $go_version."
                 else
@@ -95,6 +95,7 @@ for dep in "${NEED_INSTALL[@]}"; do
             ;;
     esac
 done
+
 
 # Configuração do diretório /opt/myapp/
 if [ -d "/opt/myapp/" ]; then
