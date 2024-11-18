@@ -35,24 +35,27 @@ NEED_INSTALL=()
 GO_URL="https://go.dev/dl/go1.21.1.linux-arm64.tar.gz"
 GO_INSTALL_DIR="/usr/local"
 GO_BINARY="/usr/local/go/bin/go"
+GO_VERSION_EXPECTED="go1.21.1"
 
+# Função para imprimir centralizado (se necessário)
+print_centered() {
+    printf "%*s\n" $(((${#1} + $(tput cols)) / 2)) "$1"
+}
+
+# Verificar dependências
 for dep in "${DEPENDENCIES[@]}"; do
     if ! command -v $dep &>/dev/null; then
         NEED_INSTALL+=($dep)
     else
-        if [ $dep == "dos2unix" ]; then
-            print_centered "$dep já está instalado."
-        elif [ $dep == "unzip" ] || [ $dep == "wget" ]; then
-            print_centered "$dep já está instalado."
-        fi
+        print_centered "$dep já está instalado."
     fi
 done
 
 # Verificar se o Go está instalado e na versão correta
 if command -v go &>/dev/null; then
     current_go_version=$(go version | awk '{print $3}')
-    if [ "$current_go_version" != "go1.21.1" ]; then
-        print_centered "Atualizando Go para a versão 1.21.1..."
+    if [ "$current_go_version" != "$GO_VERSION_EXPECTED" ]; then
+        print_centered "Atualizando Go para a versão $GO_VERSION_EXPECTED..."
         NEED_INSTALL+=("go")
     else
         print_centered "Go já está instalado na versão correta: $current_go_version."
@@ -62,7 +65,7 @@ else
     NEED_INSTALL+=("go")
 fi
 
-# Instala dependências necessárias
+# Instalar dependências necessárias
 for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
     case $dep in
@@ -81,24 +84,26 @@ for dep in "${NEED_INSTALL[@]}"; do
             sudo tar -C "$GO_INSTALL_DIR" -xzf /tmp/go.tar.gz
             rm /tmp/go.tar.gz
             
-            # Adicionar Go ao PATH
-            if ! grep -q "/usr/local/go/bin" <<<"$PATH"; then
+            # Adicionar Go ao PATH no .profile e carregar imediatamente
+            if ! grep -q "/usr/local/go/bin" ~/.profile; then
                 echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
-                source ~/.profile
+                export PATH=$PATH:/usr/local/go/bin
             fi
             
-            if [ -f "$GO_BINARY" ]; then
-                go_version=$("$GO_BINARY" version 2>/dev/null)
-                print_centered "Go instalado com sucesso. Versão: $go_version."
+            # Confirmar a instalação
+            if command -v go &>/dev/null; then
+                go_version=$(go version | awk '{print $3}')
+                if [ "$go_version" == "$GO_VERSION_EXPECTED" ]; then
+                    print_centered "Go instalado com sucesso. Versão: $go_version."
+                else
+                    print_centered "Erro: versão instalada ($go_version) não corresponde à esperada ($GO_VERSION_EXPECTED)."
+                fi
             else
                 print_centered "Erro ao instalar o Go."
             fi
             ;;
     esac
-    progress_bar 10
 done
-
-
 
 
 # Verifica se o diretório /opt/myapp/ existe
