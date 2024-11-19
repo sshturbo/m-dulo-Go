@@ -28,7 +28,21 @@ progress_bar() {
 DEPENDENCIES=("dos2unix" "unzip" "wget")
 NEED_INSTALL=()
 
-GO_URL="https://go.dev/dl/go1.23.3.linux-amd64.tar.gz"
+# Detecta a arquitetura do sistema
+ARCH=$(uname -m)
+case $ARCH in
+    x86_64)
+        GO_URL="https://go.dev/dl/go1.23.3.linux-amd64.tar.gz"
+        ;;
+    aarch64)
+        GO_URL="https://go.dev/dl/go1.23.3.linux-arm64.tar.gz"
+        ;;
+    *)
+        print_centered "Erro: Arquitetura $ARCH não é suportada."
+        exit 1
+        ;;
+esac
+
 GO_INSTALL_DIR="/usr/local"
 GO_BINARY="/usr/local/go/bin/go"
 GO_VERSION_EXPECTED="go1.23.3"
