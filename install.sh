@@ -33,6 +33,12 @@ GO_INSTALL_DIR="/usr/local"
 GO_BINARY="/usr/local/go/bin/go"
 GO_VERSION_EXPECTED="go1.23.3"
 
+# Garante que o Go esteja no PATH durante o script
+export PATH=$PATH:/usr/local/go/bin
+
+# Depuração: exibe o PATH atual
+print_centered "PATH atual: $PATH"
+
 # Verificar dependências
 for dep in "${DEPENDENCIES[@]}"; do
     if ! command -v $dep &>/dev/null; then
@@ -61,7 +67,7 @@ for dep in "${NEED_INSTALL[@]}"; do
     print_centered "Instalando $dep..."
     case $dep in
         dos2unix)
-            apt install -y dos2unix
+            apt update && apt install -y dos2unix
             ;;
         unzip)
             apt install -y unzip
@@ -75,7 +81,7 @@ for dep in "${NEED_INSTALL[@]}"; do
             tar -C "$GO_INSTALL_DIR" -xzf /tmp/go.tar.gz
             rm /tmp/go.tar.gz
 
-            # Adicionar Go ao PATH
+            # Adicionar Go ao PATH no profile
             if ! grep -q "/usr/local/go/bin" ~/.profile; then
                 echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
             fi
@@ -95,7 +101,6 @@ for dep in "${NEED_INSTALL[@]}"; do
             ;;
     esac
 done
-
 
 # Configuração do diretório /opt/myapp/
 if [ -d "/opt/myapp/" ]; then
@@ -118,7 +123,7 @@ progress_bar 5
 
 # Configurar e compilar o projeto Go
 print_centered "Instalando dependências do projeto..."
-cd /opt/myapp 
+cd /opt/myapp
 /usr/local/go/bin/go mod init m-dulo &>/dev/null
 /usr/local/go/bin/go build -o m-dulo m-dulo.go
 
