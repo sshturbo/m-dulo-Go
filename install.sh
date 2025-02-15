@@ -1,147 +1,125 @@
 #!/bin/bash
 
-# Verifica se o script está sendo executado como root
+# ===============================
+# Configurações e Variáveis Globais
+# ===============================
+APP_DIR="/opt/myapp"
+DEPENDENCIES=("unzip dos2unix")
+VERSION="1.0.0"
+FILE_URL="https://github.com/sshturbo/m-dulo-Go/releases/download/$VERSION"
+ARCH=$(uname -m)
+SERVICE_FILE_NAME="m-dulo.service"
+
+# Determinar arquitetura e nome do arquivo para download
+case $ARCH in
+x86_64)
+    FILE_NAME="m-dulo-amd64.zip"
+    DOCKER_ARCH="x86_64"
+    ;;
+aarch64)
+    FILE_NAME="m-dulo-arm64.zip"
+    DOCKER_ARCH="aarch64"
+    ;;
+*)
+    echo "Arquitetura $ARCH não suportada."
+    exit 1
+    ;;
+esac
+
+# ===============================
+# Funções Utilitárias
+# ===============================
+print_centered() {
+    printf "\e[33m%s\e[0m\n" "$1"
+}
+
+progress_bar() {
+    local total_steps=$1
+    for ((i = 0; i < total_steps; i++)); do
+        echo -n "#"
+        sleep 0.1
+    done
+    echo " COMPLETO!"
+}
+
+run_with_spinner() {
+    local command="$1"
+    local message="$2"
+    echo -n "$message"
+    $command &>/tmp/command_output.log &
+    local pid=$!
+    while kill -0 $pid 2>/dev/null; do
+        echo -n "."
+        sleep 1
+    done
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo " ERRO!"
+        cat /tmp/command_output.log
+        exit 1
+    else
+        echo " FEITO!"
+    fi
+}
+
+install_if_missing() {
+    local package=$1
+    if ! command -v $package &>/dev/null; then
+        run_with_spinner "apt-get install -y $package" "INSTALANDO $package"
+    else
+        print_centered "$package JÁ ESTÁ INSTALADO."
+    fi
+}
+
+# ===============================
+# Validações Iniciais
+# ===============================
 if [[ $EUID -ne 0 ]]; then
-    echo "Este script deve ser executado como root"
+    echo "Este script deve ser executado como root."
     exit 1
 fi
 
-# Função para centralizar texto
-print_centered() {
-    printf "%*s\n" $(((${#1} + $(tput cols)) / 2)) "$1"
-}
+# ===============================
+# Atualização do Sistema
+# ===============================
+print_centered "ATUALIZANDO O SISTEMA..."
+run_with_spinner "apt-get update" "ATUALIZANDO O SISTEMA"
+run_with_spinner "apt-get upgrade -y" "ATUALIZANDO O SISTEMA"
 
-# Função para simular uma barra de progresso
-progress_bar() {
-    local total_steps=$1
-    local current_step=0
-
-    echo -n "Progresso: ["
-    while [ $current_step -lt $total_steps ]; do
-        echo -n "#"
-        ((current_step++))
-        sleep 0.1
-    done
-    echo "] Completo!"
-}
-
-DEPENDENCIES=("dos2unix" "unzip" "wget")
-NEED_INSTALL=()
-
-# Detecta a arquitetura do sistema
-ARCH=$(uname -m)
-case $ARCH in
-    x86_64)
-        GO_URL="https://go.dev/dl/go1.23.3.linux-amd64.tar.gz"
-        ;;
-    aarch64)
-        GO_URL="https://go.dev/dl/go1.23.3.linux-arm64.tar.gz"
-        ;;
-    *)
-        print_centered "Erro: Arquitetura $ARCH não é suportada."
-        exit 1
-        ;;
-esac
-
-GO_INSTALL_DIR="/usr/local"
-GO_BINARY="/usr/local/go/bin/go"
-GO_VERSION_EXPECTED="go1.23.3"
-
-# Garante que o Go esteja no PATH durante o script
-export PATH=$PATH:/usr/local/go/bin
-
-# Depuração: exibe o PATH atual
-print_centered "PATH atual: $PATH"
-
-# Verificar dependências
+# Instalar dependências
 for dep in "${DEPENDENCIES[@]}"; do
-    if ! command -v $dep &>/dev/null; then
-        NEED_INSTALL+=($dep)
-    else
-        print_centered "$dep já está instalado."
-    fi
+    install_if_missing $dep
 done
 
-# Verificar se o Go está instalado e na versão correta
-if [ -x "$GO_BINARY" ]; then
-    current_go_version=$("$GO_BINARY" version | awk '{print $3}')
-    if [ "$current_go_version" != "$GO_VERSION_EXPECTED" ]; then
-        print_centered "Atualizando Go para a versão $GO_VERSION_EXPECTED..."
-        NEED_INSTALL+=("go")
+
+# ===============================
+# Configuração da Aplicação
+# ===============================
+# Configurar diretório da aplicação
+if [ -d "$APP_DIR" ]; then
+    print_centered "DIRETÓRIO $APP_DIR JÁ EXISTE. EXCLUINDO ANTIGO..."
+    if systemctl list-units --full -all | grep -Fq "$SERVICE_FILE_NAME"; then
+        run_with_spinner "systemctl stop $SERVICE_FILE_NAME" "PARANDO SERVIÇO"
+        run_with_spinner "systemctl disable $SERVICE_FILE_NAME" "DESABILITANDO SERVIÇO"
     else
-        print_centered "Go já está instalado na versão correta: $current_go_version."
+        print_centered "SERVIÇO $SERVICE_FILE_NAME NÃO ENCONTRADO."
     fi
+    run_with_spinner "rm -rf $APP_DIR" "EXCLUINDO DIRETÓRIO"
 else
-    print_centered "Go não está instalado ou o binário não foi encontrado em $GO_BINARY."
-    NEED_INSTALL+=("go")
+    print_centered "DIRETÓRIO $APP_DIR NÃO EXISTE. NADA A EXCLUIR."
 fi
+mkdir -p $APP_DIR
 
-# Instalar dependências necessárias
-for dep in "${NEED_INSTALL[@]}"; do
-    print_centered "Instalando $dep..."
-    case $dep in
-        dos2unix)
-            apt update && apt install -y dos2unix
-            ;;
-        unzip)
-            apt install -y unzip
-            ;;
-        wget)
-            apt install -y wget
-            ;;
-        go)
-            # Baixar e instalar o Go manualmente
-            wget -q "$GO_URL" -O /tmp/go.tar.gz
-            tar -C "$GO_INSTALL_DIR" -xzf /tmp/go.tar.gz
-            rm /tmp/go.tar.gz
+# Baixar e configurar o módulo
+print_centered "BAIXANDO $FILE_NAME..."
+run_with_spinner "wget --timeout=30 -O $APP_DIR/$FILE_NAME $FILE_URL/$FILE_NAME" "BAIXANDO ARQUIVO"
 
-            # Adicionar Go ao PATH no profile
-            if ! grep -q "/usr/local/go/bin" ~/.profile; then
-                echo "export PATH=\$PATH:/usr/local/go/bin" >> ~/.profile
-            fi
-            export PATH=$PATH:/usr/local/go/bin
-
-            # Confirmar a instalação
-            if [ -x "$GO_BINARY" ]; then
-                go_version=$("$GO_BINARY" version | awk '{print $3}')
-                if [ "$go_version" == "$GO_VERSION_EXPECTED" ]; then
-                    print_centered "Go instalado com sucesso. Versão: $go_version."
-                else
-                    print_centered "Erro: versão instalada ($go_version) não corresponde à esperada ($GO_VERSION_EXPECTED)."
-                fi
-            else
-                print_centered "Erro ao instalar o Go."
-            fi
-            ;;
-    esac
-done
-
-# Configuração do diretório /opt/myapp/
-if [ -d "/opt/myapp/" ]; then
-    print_centered "Diretório /opt/myapp/ já existe. Excluindo antigo..."
-    systemctl stop m-dulo.service &>/dev/null
-    systemctl disable m-dulo.service &>/dev/null
-    systemctl daemon-reload &>/dev/null
-    rm -rf /opt/myapp/
-fi
-
-mkdir -p /opt/myapp/
-
-# Baixar e configurar o repositório
-print_centered "Baixando m-dulo-Go.zip..."
-wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/raw/main/m-dulo-Go.zip &>/dev/null
-
-print_centered "Extraindo arquivos..."
-unzip /opt/myapp/m-dulo-Go.zip -d /opt/myapp/ &>/dev/null && rm /opt/myapp/m-dulo-Go.zip
+print_centered "EXTRAINDO ARQUIVOS..."
+run_with_spinner "unzip $APP_DIR/$FILE_NAME -d $APP_DIR" "EXTRAINDO ARQUIVOS"
+run_with_spinner "rm $APP_DIR/$FILE_NAME" "REMOVENDO ARQUIVO ZIP"
 progress_bar 5
 
-# Configurar e compilar o projeto Go
-print_centered "Instalando dependências do projeto..."
-cd /opt/myapp
-/usr/local/go/bin/go mod init m-dulo &>/dev/null
-/usr/local/go/bin/go build -o m-dulo m-dulo.go
-
-chmod +x m-dulo
+chmod -R 775 $APP_DIR
 
 # Atualizar permissões de scripts auxiliares
 print_centered "Atualizando permissões..."
@@ -151,18 +129,17 @@ for file in "SshturboMakeAccount.sh" "ExcluirExpiradoApi.sh" "killuser.sh"; do
 done
 
 # Configurar serviço systemd
-if [ -f "/opt/myapp/m-dulo.service" ]; then
-    print_centered "Configurando serviço systemd..."
-    cp /opt/myapp/m-dulo.service /etc/systemd/system/
-    chown root:root /etc/systemd/system/m-dulo.service
-    chmod 644 /etc/systemd/system/m-dulo.service
+if [ -f "$APP_DIR/$SERVICE_FILE_NAME" ]; then
+    cp "$APP_DIR/$SERVICE_FILE_NAME" /etc/systemd/system/
+    chmod 644 /etc/systemd/system/$SERVICE_FILE_NAME
     systemctl daemon-reload
-    systemctl enable m-dulo.service
-    systemctl start m-dulo.service
+    systemctl enable $SERVICE_FILE_NAME
+    systemctl start $SERVICE_FILE_NAME
+    print_centered "SERVIÇO $SERVICE_FILE_NAME CONFIGURADO E INICIADO COM SUCESSO!"
 else
-    print_centered "Erro: Arquivo m-dulo.service não encontrado."
+    print_centered "Erro: Arquivo de serviço não encontrado."
     exit 1
 fi
 
 progress_bar 10
-print_centered "Modulos instalado e configurado com sucesso!"
+print_centered "MÓDULO INSTALADO E CONFIGURADO COM SUCESSO!"
