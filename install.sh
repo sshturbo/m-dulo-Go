@@ -79,13 +79,6 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# ===============================
-# Atualização do Sistema
-# ===============================
-print_centered "ATUALIZANDO O SISTEMA..."
-run_with_spinner "apt-get update" "ATUALIZANDO O SISTEMA"
-run_with_spinner "apt-get upgrade -y" "ATUALIZANDO O SISTEMA"
-
 # Instalar dependências
 for dep in "${DEPENDENCIES[@]}"; do
     install_if_missing $dep
