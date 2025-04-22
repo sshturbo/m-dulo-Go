@@ -4,7 +4,7 @@
 # Configurações e Variáveis Globais
 # ===============================
 APP_DIR="/opt/myapp"
-DEPENDENCIES=("unzip dos2unix")
+DEPENDENCIES=("unzip" "dos2unix")
 VERSION="1.0.1"
 FILE_URL="https://github.com/sshturbo/m-dulo-Go/releases/download/$VERSION"
 ARCH=$(uname -m)
