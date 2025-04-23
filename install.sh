@@ -5,7 +5,7 @@
 # ===============================
 APP_DIR="/opt/myapp"
 DEPENDENCIES=("unzip" "dos2unix")
-VERSION="1.0.1"
+VERSION="1.0.0"
 FILE_URL="https://github.com/sshturbo/m-dulo-Go/releases/download/$VERSION"
 ARCH=$(uname -m)
 SERVICE_FILE_NAME="m-dulo.service"
