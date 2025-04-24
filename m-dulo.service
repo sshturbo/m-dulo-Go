@@ -1,0 +1,24 @@
+[Unit]
+Description=Módulos do Painel Pro
+After=network.target
+StartLimitInterval=30
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/opt/myapp/m-dulo
+WorkingDirectory=/opt/myapp
+Restart=always
+RestartSec=5
+Environment=GO_ENV=production
+StandardOutput=file:/var/log/m-dulo.out.log
+StandardError=file:/var/log/m-dulo.err.log
+
+# Limites de recursos (opcional)
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
