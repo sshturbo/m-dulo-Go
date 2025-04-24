@@ -6,7 +6,7 @@
 APP_DIR="/opt/myapp"
 DEPENDENCIES=(unzip dos2unix)
 VERSION="1.0.1"
-echo -e "\e[32mInstalando Módulo versão $VERSION\e[0m"
+echo -e "\e[32mInstalando Módulo versão $VERSION Versao com Xray com arquitetura $ARCH\e[0m"
 FILE_URL="https://github.com/sshturbo/m-dulo-Go/releases/download/$VERSION"
 ARCH=$(uname -m)
 SERVICE_FILE_NAME="m-dulo.service"
