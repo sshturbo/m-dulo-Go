@@ -1,160 +1,138 @@
 #!/bin/bash
 
-# Verifica se o script está sendo executado como root
+# ===============================
+# Configurações e Variáveis Globais
+# ===============================
+APP_DIR="/opt/myapp"
+DEPENDENCIES=("unzip dos2unix")
+VERSION="1.0.0"
+FILE_URL="https://github.com/sshturbo/m-dulo-Go/releases/download/$VERSION"
+ARCH=$(uname -m)
+SERVICE_FILE_NAME="m-dulo.service"
+
+# Determinar arquitetura e nome do arquivo para download
+case $ARCH in
+x86_64)
+    FILE_NAME="m-dulo-amd64.zip"
+    DOCKER_ARCH="x86_64"
+    ;;
+aarch64)
+    FILE_NAME="m-dulo-arm64.zip"
+    DOCKER_ARCH="aarch64"
+    ;;
+*)
+    echo "Arquitetura $ARCH não suportada."
+    exit 1
+    ;;
+esac
+
+# ===============================
+# Funções Utilitárias
+# ===============================
+print_centered() {
+    printf "\e[33m%s\e[0m\n" "$1"
+}
+
+progress_bar() {
+    local total_steps=$1
+    for ((i = 0; i < total_steps; i++)); do
+        echo -n "#"
+        sleep 0.1
+    done
+    echo " COMPLETO!"
+}
+
+run_with_spinner() {
+    local command="$1"
+    local message="$2"
+    echo -n "$message"
+    $command &>/tmp/command_output.log &
+    local pid=$!
+    while kill -0 $pid 2>/dev/null; do
+        echo -n "."
+        sleep 1
+    done
+    wait $pid
+    if [ $? -ne 0 ]; then
+        echo " ERRO!"
+        cat /tmp/command_output.log
+        exit 1
+    else
+        echo " FEITO!"
+    fi
+}
+
+install_if_missing() {
+    local package=$1
+    if ! command -v $package &>/dev/null; then
+        run_with_spinner "apt-get install -y $package" "INSTALANDO $package"
+    else
+        print_centered "$package JÁ ESTÁ INSTALADO."
+    fi
+}
+
+# ===============================
+# Validações Iniciais
+# ===============================
 if [[ $EUID -ne 0 ]]; then
-    echo "Este script deve ser executado como root"
+    echo "Este script deve ser executado como root."
     exit 1
 fi
 
-# Função para centralizar texto
-print_centered() {
-    term_width=$(tput cols)
-    text="$1"
-    padding=$(( (term_width - ${#text}) / 2 ))
-    printf "%${padding}s" '' # Adiciona espaços antes do texto
-    echo "$text"
-}
-
-# Função para simular uma barra de progresso
-progress_bar() {
-    local total_steps=$1
-    local current_step=0
-
-    echo -n "Progresso: ["
-    while [ $current_step -lt $total_steps ]; do
-        echo -n "#"
-        ((current_step++))
-        sleep 0.1
-    done
-    echo "] Completo!"
-}
-
-DEPENDENCIES=("dos2unix" "go" "unzip" "wget")
-NEED_INSTALL=()
-
+# Instalar dependências
 for dep in "${DEPENDENCIES[@]}"; do
-    if ! command -v $dep &>/dev/null; then
-        NEED_INSTALL+=($dep)
+    install_if_missing $dep
+done
+
+
+# ===============================
+# Configuração da Aplicação
+# ===============================
+# Configurar diretório da aplicação
+if [ -d "$APP_DIR" ]; then
+    print_centered "DIRETÓRIO $APP_DIR JÁ EXISTE. EXCLUINDO ANTIGO..."
+    if systemctl list-units --full -all | grep -Fq "$SERVICE_FILE_NAME"; then
+        run_with_spinner "systemctl stop $SERVICE_FILE_NAME" "PARANDO SERVIÇO"
+        run_with_spinner "systemctl disable $SERVICE_FILE_NAME" "DESABILITANDO SERVIÇO"
     else
-        if [ $dep == "dos2unix" ]; then
-            print_centered "$dep já está instalado."
-        elif [ $dep == "go" ]; then
-            go_version=$(go version)
-            print_centered "$dep já está instalado. $go_version"
-        elif [ $dep == "unzip" ] || [ $dep == "wget" ]; then
-            print_centered "$dep já está instalado."
-        else
-            current_version=$($dep -v | cut -d ' ' -f 2 | cut -d '.' -f 1)
-            print_centered "$dep já está instalado. Versão atual: $current_version."
-        fi
+        print_centered "SERVIÇO $SERVICE_FILE_NAME NÃO ENCONTRADO."
     fi
-done
-
-# Instala dependências necessárias
-for dep in "${NEED_INSTALL[@]}"; do
-    print_centered "Instalando $dep..."
-
-    case $dep in
-        dos2unix)
-            sudo apt install dos2unix -y
-            ;;
-        go)
-            sudo apt install golang-go -y &>/dev/null
-            go_version=$(go version 2>/dev/null)
-            if [ $? -ne 0 ]; then
-                print_centered "Erro ao verificar a versão do Go. O Go pode não estar instalado corretamente."
-            else
-                print_centered "$dep instalado com sucesso. Versão: $go_version."
-            fi
-            ;;
-        unzip)
-            sudo apt install unzip -y
-            print_centered "$dep instalado com sucesso."
-            ;;
-        wget)
-            sudo apt install wget -y
-            print_centered "$dep instalado com sucesso."
-            ;;
-    esac
-    progress_bar 10
-done
-
-
-
-# Verifica se o diretório /opt/myapp/ existe
-if [ -d "/opt/myapp/" ]; then
-    print_centered "Diretório /opt/myapp/ já existe. Parando e desabilitando o serviço se existir..."
-    sudo systemctl stop m-dulo.service &>/dev/null
-    sudo systemctl disable m-dulo.service &>/dev/null
-    sudo systemctl daemon-reload &>/dev/null
-    
-    print_centered "Excluindo arquivo de configuração do serviço..."
-    sudo rm -f /etc/systemd/system/m-dulo.service
-    
-    print_centered "Recarregando daemon do systemd..."
-    sudo systemctl daemon-reload &>/dev/null
-    
-    print_centered "Excluindo arquivos e pastas antigos..."
-    sudo rm -rf /opt/myapp/
+    run_with_spinner "rm -rf $APP_DIR" "EXCLUINDO DIRETÓRIO"
 else
-    print_centered "Diretório /opt/myapp/ não existe. Criando..."
+    print_centered "DIRETÓRIO $APP_DIR NÃO EXISTE. NADA A EXCLUIR."
 fi
+mkdir -p $APP_DIR
 
-# Criar o diretório para o aplicativo
-sudo mkdir -p /opt/myapp/
+# Baixar e configurar o módulo
+print_centered "BAIXANDO $FILE_NAME..."
+run_with_spinner "wget --timeout=30 -O $APP_DIR/$FILE_NAME $FILE_URL/$FILE_NAME" "BAIXANDO ARQUIVO"
 
-
-# Baixar o ZIP do repositório ModulosPro diretamente no diretório /opt/myapp/
-print_centered "Baixando m-dulo-Go.zip..."
-sudo wget --timeout=30 -P /opt/myapp/ https://github.com/sshturbo/m-dulo-Go/raw/main/m-dulo-Go.zip &>/dev/null
-
-# Extrair o ZIP diretamente no diretório /opt/myapp/ e remover o arquivo ZIP após a extração
-print_centered "Extraindo arquivos..."
-sudo unzip /opt/myapp/m-dulo-Go.zip -d /opt/myapp/ &>/dev/null && sudo rm /opt/myapp/m-dulo-Go.zip
+print_centered "EXTRAINDO ARQUIVOS..."
+run_with_spinner "unzip $APP_DIR/$FILE_NAME -d $APP_DIR" "EXTRAINDO ARQUIVOS"
+run_with_spinner "rm $APP_DIR/$FILE_NAME" "REMOVENDO ARQUIVO ZIP"
 progress_bar 5
 
-# Baixar o pacote github.com/gorilla/mux
-print_centered "instalando dependicias"
-cd /opt/myapp 
+chmod -R 775 $APP_DIR
 
-sudo go mod init m-dulo
-
-sudo go build -o m-dulo m-dulo.go
-
-sudo chmod +x m-dulo
-
-# Dar permissão de execução para scripts .sh e converter para o formato Unix
+# Atualizar permissões de scripts auxiliares
 print_centered "Atualizando permissões..."
-files=(
-    "SshturboMakeAccount.sh"
-    "ExcluirExpiradoApi.sh"
-    "killuser.sh"
-)
-
-for file in "${files[@]}"; do
-    sudo chmod +x /opt/myapp/"$file"
+for file in "SshturboMakeAccount.sh" "ExcluirExpiradoApi.sh" "killuser.sh"; do
+    chmod +x /opt/myapp/"$file"
     dos2unix /opt/myapp/"$file" &>/dev/null
 done
 
-
-if [ -f "/opt/myapp/m-dulo.service" ]; then
-    print_centered "Copiando m-dulo.service para /etc/systemd/system/"
-    sudo cp /opt/myapp/m-dulo.service /etc/systemd/system/
-    sudo chown root:root /etc/systemd/system/m-dulo.service
-    sudo chmod 644 /etc/systemd/system/m-dulo.service
-    print_centered "Arquivo copiado com sucesso."
+# Configurar serviço systemd
+if [ -f "$APP_DIR/$SERVICE_FILE_NAME" ]; then
+    cp "$APP_DIR/$SERVICE_FILE_NAME" /etc/systemd/system/
+    chmod 644 /etc/systemd/system/$SERVICE_FILE_NAME
+    systemctl daemon-reload
+    systemctl enable $SERVICE_FILE_NAME
+    systemctl start $SERVICE_FILE_NAME
+    print_centered "SERVIÇO $SERVICE_FILE_NAME CONFIGURADO E INICIADO COM SUCESSO!"
 else
-    print_centered "Arquivo m-dulo.service não encontrado. Verifique se o arquivo existe no repositório."
+    print_centered "Erro: Arquivo de serviço não encontrado."
+    exit 1
 fi
 
-# Atualizar a configuração do systemctl
-sudo systemctl daemon-reload &>/dev/null
-
-# Iniciar o serviço
-print_centered "Iniciando o modulos do painel..."
-sudo systemctl start m-dulo.service &>/dev/null
-sudo systemctl enable m-dulo.service &>/dev/null
-
 progress_bar 10
-
-print_centered "Modulos instalado com sucesso!"
+print_centered "MÓDULO INSTALADO E CONFIGURADO COM SUCESSO!"
