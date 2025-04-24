@@ -1,10 +1,11 @@
 #!/bin/bash
 
-excluir_uuid_do_v2ray() {
+excluir_uuid_do_xray() {
     local config_file="$1"
     local uuid_para_excluir="$2"
 
-    jq --arg uuid "$uuid_para_excluir" '.inbounds[0].settings.clients |= map(select(.id != $uuid))' "$config_file" > tmp_config.json && mv tmp_config.json "$config_file"
+    # Remove o cliente com o UUID informado de todos os inbounds do tipo vless
+    jq '(.inbounds[] | select(.protocol == "vless") | .settings.clients) |= map(select(.id != "'$uuid_para_excluir'"))' "$config_file" > tmp_config.json && mv tmp_config.json "$config_file"
 }
 
 excluir_uuid_do_registro() {
@@ -38,8 +39,8 @@ user_exists_by_id() {
     id "$1" &>/dev/null
 }
 
-CONFIG_FILE="/etc/v2ray/config.json"
-REGISTRO_FILE="/etc/SSHPlus/RegV2ray"
+CONFIG_FILE="/usr/local/etc/xray/config.json"
+REGISTRO_FILE="/root/xrayusers.db"
 
 if [ "$#" -lt 1 ]; then
     echo "Erro: Argumentos insuficientes."
@@ -52,11 +53,14 @@ UUID_PARA_EXCLUIR="$2"
 if [ -z "$UUID_PARA_EXCLUIR" ]; then
     excluir_usuario_do_sistema "$USUARIO"
 else
-    excluir_uuid_do_v2ray "$CONFIG_FILE" "$UUID_PARA_EXCLUIR"
+    excluir_uuid_do_xray "$CONFIG_FILE" "$UUID_PARA_EXCLUIR"
     excluir_uuid_do_registro "$REGISTRO_FILE" "$UUID_PARA_EXCLUIR"
     excluir_usuario_do_sistema "$USUARIO"
 fi
 
-systemctl restart v2ray
+# Reiniciar o serviço xray
+systemctl restart xray || service xray restart
+echo "Serviço Xray reiniciado."
+return 0
 
 echo "Operações concluídas com sucesso."

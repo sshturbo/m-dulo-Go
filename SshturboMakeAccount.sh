@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# Função para gerar um e-mail aleatório
-gerar_email_aleatorio() {
-    tamanho=10
-    caracteres=($(echo {a..z} {A..Z} {0..9}))
-    email_local=""
-    for ((i=0; i<tamanho; i++)); do
-        index=$(( $RANDOM % ${#caracteres[@]} ))
-        email_local+="${caracteres[$index]}"
-    done
-    echo "${email_local}"
-}
-
 # Função para adicionar usuário ao sistema
 adicionar_usuario_sistema() {
     username=$1
@@ -39,7 +27,7 @@ adicionar_usuario_xray() {
     username=$1
     uuid=$2
     config_file="/usr/local/etc/xray/config.json"
-    email=$(gerar_email_aleatorio)
+    email="$username"  # Usar o username recebido como email
 
     # Verificar se o arquivo existe
     if [ ! -f "$config_file" ]; then
